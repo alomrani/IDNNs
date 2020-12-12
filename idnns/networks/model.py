@@ -9,7 +9,6 @@ from idnns.networks.ops import *
 
 def lazy_property(function):
 	attribute = '_cache_' + function.__name__
-
 	@property
 	@functools.wraps(function)
 	def decorator(self):
@@ -24,8 +23,7 @@ def lazy_property(function):
 class Model:
 	"""A class that represent model of network"""
 
-	def __init__(self, input_size, layerSize, num_of_classes, learning_rate_local=0.001, save_file='',
-	             activation_function=0, cov_net=False):
+	def __init__(self, input_size, layerSize, num_of_classes, learning_rate_local=0.001, save_file='', activation_function=0, cov_net=False):
 		self.covnet = cov_net
 		self.input_size = input_size
 		self.layerSize = layerSize
@@ -49,12 +47,8 @@ class Model:
 
 	def initilizae_layer(self, name_scope, row_size, col_size, activation_function, last_hidden):
 		# Bulid layer of the network with weights and biases
-		weights = get_scope_variable(name_scope=name_scope, var="weights",
-		                             shape=[row_size, col_size],
-		                             initializer=tf.truncated_normal_initializer(mean=0.0, stddev=1.0 / np.sqrt(
-			                             float(row_size))))
-		biases = get_scope_variable(name_scope=name_scope, var='biases', shape=[col_size],
-		                            initializer=tf.constant_initializer(0.0))
+		weights = get_scope_variable(name_scope=name_scope, var="weights", shape=[row_size, col_size], initializer=tf.truncated_normal_initializer(mean=0.0, stddev=1.0 / np.sqrt(float(row_size))))
+		biases = get_scope_variable(name_scope=name_scope, var='biases', shape=[col_size], initializer=tf.constant_initializer(0.0))
 
 		self.weights_all.append(weights)
 		self.biases_all.append(biases)
@@ -83,18 +77,20 @@ class Model:
 			if self.covnet == 1:
 				y_conv, self._drouput, self.hidden, self.inputs = deepnn(self.x)
 			elif self.covnet == 2:
-				y_c, self.hidden, self.inputs = multi_layer_perceptron(self.x, self.input_size, self.num_of_classes,
-				                                                       self.layerSize[0], self.layerSize[1])
+				y_c, self.hidden, self.inputs = multi_layer_perceptron(self.x, self.input_size, self.num_of_classes, self.layerSize[0], self.layerSize[1])
 			else:
-
 				self._drouput = 'dr'
 				# self.hidden.append(self.x)
+				r1 = 0
 				for i in range(1, len(self.all_layer_sizes)):
 					name_scope = 'hidden' + str(i - 1)
 					row_size, col_size = self.all_layer_sizes[i - 1], self.all_layer_sizes[i]
 					activation_function = self.activation_function
-					last_hidden = self.initilizae_layer(name_scope, row_size, col_size, activation_function,
-					                                    last_hidden)
+					if i == 5:
+						last_hidden = last_hidden + r1
+					last_hidden = self.initilizae_layer(name_scope, row_size, col_size, activation_function, last_hidden)
+					if i == 3:
+						r1 = last_hidden
 				name_scope = 'final_layer'
 				row_size, col_size = self.layerSize[-1], self.num_of_classes
 				activation_function = tf.nn.softmax
